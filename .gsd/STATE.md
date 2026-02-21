@@ -4,12 +4,10 @@
 > **Last Updated**: 2026-02-21
 
 ## Last Action
-- Finished executing Phase 6 (Plan 6.1: Safety Evaluation).
-- Wrote `promptfooconfig.yaml`, `safety_tests.csv`, and `run_evals.ps1` to programmatically evaluate the FastAPI RAG backend for jailbreaks and adherence.
+- Added Phase 7 (Integration Testing & Debugging) and Phase 8 (Frontend-Backend Integration) to ROADMAP.md per user request.
 
 ## Next Step
-- The VoxVeritas v1.0 Milestone is formally COMPLETE!
-- All 6 phases successfully executed in accordance with SPEC.md.
+- `/plan 7` to create detailed execution plans for the Integration Testing & Debugging phase.
 
 
 ## Recent Changes

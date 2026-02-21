@@ -41,3 +41,29 @@
 **Status**: ✅ Complete
 **Objective**: Integrate Promptfoo for safety evaluations against the LLM pipeline, and write robust terminal scripts to demo the entire flow without a frontend.
 **Requirements**: REQ-06
+
+---
+
+### Phase 7: Integration Testing & Debugging
+**Status**: ⬜ Not Started
+**Objective**: End-to-end testing of all pipeline components to resolve bugs, validate hallucination guards using live Promptfoo evaluations against the running backend, and ensure the full system is stable and demo-ready.
+**Depends on**: Phase 6
+
+**Tasks**:
+- [ ] TBD (run /plan 7 to create)
+
+**Verification**:
+- TBD
+
+---
+
+### Phase 8: Frontend-Backend Integration
+**Status**: ⬜ Not Started
+**Objective**: Integrate the externally developed frontend with the VoxVeritas FastAPI backend. Establish CORS policies, finalize the API contract, and ensure the full voice-to-voice pipeline works end-to-end through the production frontend.
+**Depends on**: Phase 7
+
+**Tasks**:
+- [ ] TBD (run /plan 8 to create)
+
+**Verification**:
+- TBD
