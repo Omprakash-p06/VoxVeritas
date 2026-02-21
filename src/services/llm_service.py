@@ -43,15 +43,36 @@ class LLMService:
 
     def _load_model(self):
         """Loads the GGUF model into memory/VRAM using llama-cpp."""
-        logger.info(f"Loading model into memory/VRAM: {self.model_path}")
+        logger.info(f"Loading model: {self.model_path}")
+        
+        # Determine GPU layer count based on available backends
+        n_gpu = 0
+        try:
+            import llama_cpp
+            # Check if CUDA backend is available in llama-cpp-python
+            if hasattr(llama_cpp, 'llama_supports_gpu_offload') and llama_cpp.llama_supports_gpu_offload():
+                n_gpu = -1  # Offload all layers
+                logger.info("llama-cpp CUDA backend detected — offloading ALL layers to GPU.")
+            else:
+                # Also try checking via torch
+                import torch
+                if torch.cuda.is_available():
+                    logger.warning("PyTorch has CUDA but llama-cpp-python was NOT compiled with GPU support.")
+                    logger.warning("Running LLM on CPU. To enable GPU, install llama-cpp-python with CUDA wheels.")
+                else:
+                    logger.info("No GPU backend available — running LLM on CPU.")
+        except Exception as e:
+            logger.warning(f"GPU detection failed ({e}), defaulting to CPU.")
+        
         try:
             self.llm = Llama(
                 model_path=self.model_path,
-                n_gpu_layers=-1, # Offload all layers to GPU
-                n_ctx=2048,      # Context window size
-                verbose=False    # Suppress verbose C++ logs
+                n_gpu_layers=n_gpu,
+                n_ctx=2048,
+                verbose=False
             )
-            logger.info("Model loaded successfully. GPU layers offloaded: ALL (-1)")
+            device_label = "GPU (all layers)" if n_gpu == -1 else "CPU"
+            logger.info(f"Model loaded successfully on {device_label}.")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
