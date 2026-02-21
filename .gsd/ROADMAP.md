@@ -18,7 +18,7 @@
 **Requirements**: REQ-04, REQ-07
 
 ### Phase 2: Core RAG & LLM Integration
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Integrate Sarvam-1 2B via llama-cpp-python, build semantic retrieval against ChromaDB, and generate grounded answers with citations.
 **Requirements**: REQ-03, REQ-08
 
