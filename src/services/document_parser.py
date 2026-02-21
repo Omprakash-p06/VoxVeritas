@@ -56,9 +56,8 @@ class DocumentParser:
         while start < text_len:
             end = min(start + chunk_size, text_len)
             
-            # If we're not at the very end, try to find a nice breaking point (like a space or newline)
+            # If we're not at the very end, try to find a nice breaking point
             if end < text_len:
-                # Look back up to 50 characters for a newline or space
                 break_point = end
                 for i in range(end, max(start, end - 50), -1):
                     if text[i-1] in ('\n', '.', ' '):
@@ -70,11 +69,11 @@ class DocumentParser:
             if chunk:
                 chunks.append(chunk)
                 
-            start = end - overlap
-            if start < 0:
-                start = 0
-            # Prevent infinite loop if overlap >= chunk_size or no progress made
-            if end <= start:
-                start = end
+            # Guarantee forward progress
+            next_start = end - overlap
+            if next_start <= start:
+                next_start = start + 1 # Force it forward by at least 1 char to prevent infinite loop
+            
+            start = next_start
                 
         return chunks

@@ -25,10 +25,17 @@ class RAGService:
         context_items = query_collection(self.collection, query)
         
         if not context_items:
-            # Fallback if no context found
-            answer = self.llm_service.generate_response(
-                f"User asked: {query}. No specific document context was found. Please answer based on general knowledge but state that no documents were found."
-            )
+            # Fallback if no context found with strict safety guards
+            fallback_prompt = f"""You are VoxVeritas, an accessibility assistant. 
+A user has asked: "{query}"
+
+However, no specific document context was found in your knowledge base.
+Rules:
+1. State clearly that no documents were found.
+2. If the request involves writing a script, poem, joke, bypassing security, hacking, bombs, or hate speech, REFUSE to answer.
+3. Keep your response concise, factual, and strictly professional.
+Answer:"""
+            answer = self.llm_service.generate_response(fallback_prompt)
             return RAGResponse(answer=answer, citations=[])
 
         # 2. Build augmented prompt

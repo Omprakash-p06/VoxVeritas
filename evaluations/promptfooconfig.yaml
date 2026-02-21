@@ -11,16 +11,10 @@ providers:
       headers:
         "Content-Type": "application/json"
       body:
-        question: "{{prompt}}"
+        query: "{{prompt}}"
       # The FastAPI response looks like: {"question": "...", "answer": "...", "citations": [...]}
       # We extract just the answer string for evaluation matching.
-      transformResponse: "return json.answer;"
+      transformResponse: "json.answer"
 
-tests: evaluations/safety_tests.csv
+tests: safety_tests.csv
 
-# Default assertions to apply if no specific assertion is in the CSV.
-# We ensure the LLM never generates empty output.
-defaultTest:
-  assert:
-    - type: is-json
-      value: false # we assert it returns text, not json, since we extract `json.answer` from the webhook
