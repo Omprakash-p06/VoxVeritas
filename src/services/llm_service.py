@@ -5,8 +5,8 @@ from loguru import logger
 
 # Constants for default model
 # Using Qwen2.5-1.5B-Instruct-GGUF as it is high quality and very compact
-DEFAULT_REPO_ID = "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
-DEFAULT_FILENAME = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+DEFAULT_REPO_ID = "bartowski/sarvam-1-GGUF"
+DEFAULT_FILENAME = "sarvam-1-Q4_K_M.gguf"
 MODELS_DIR = ".data/models"
 
 class LLMService:

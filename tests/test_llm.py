@@ -2,7 +2,7 @@ import pytest
 from src.services.llm_service import LLMService
 import os
 
-@pytest.mark.skipif(not os.path.exists(".data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf"), 
+@pytest.mark.skipif(not os.path.exists(".data/models/sarvam-1-Q4_K_M.gguf"), 
                     reason="Model file not downloaded yet")
 def test_llm_generation():
     service = LLMService()
