@@ -4,12 +4,11 @@
 > **Last Updated**: 2026-02-21
 
 ## Last Action
-- Finished executing Phase 5 (Plan 5.1: Desktop Frontend Dashboard).
-- Created `index.html`, `style.css`, and `app.js` and wired them to FastAPI using `StaticFiles`. The entire frontend runs with 0 extra dependencies.
+- Finished planning Phase 6 (Plan 6.1: Safety Evaluation).
+- Decided to use Promptfoo's `http` provider to hit the local `http://localhost:8000/ask` endpoint to statically evaluate the RAG pipeline's safety bounds.
 
 ## Next Step
-- The user should test the Application Frontend by running `uvicorn src.main:app` and visiting `http://localhost:8000`.
-- Phase 6: Safety Evaluation & Terminal Testing.
+- `/execute 6` to write the YAML configs, the safety dataset, and the PowerShell evaluation helper script.
 
 
 ## Recent Changes
