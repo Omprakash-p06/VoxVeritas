@@ -9,3 +9,6 @@ sentence-transformers
 pytest
 llama-cpp-python
 huggingface_hub
+openai-whisper
+kokoro
+soundfile

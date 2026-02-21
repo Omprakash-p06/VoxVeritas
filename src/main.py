@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from src.core.logging import setup_logging
-from src.api import health, document, qa
+from src.api import health, document, qa, voice
 
 def create_app() -> FastAPI:
     """Creates and configures the FastAPI application."""
@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router, tags=["Health"])
     app.include_router(document.router, tags=["Documents"])
     app.include_router(qa.router, tags=["QA"])
+    app.include_router(voice.router, tags=["Voice"])
 
     @app.on_event("startup")
     async def startup_event():
