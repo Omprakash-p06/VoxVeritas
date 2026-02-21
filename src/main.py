@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from src.core.logging import setup_logging
@@ -24,6 +25,11 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def startup_event():
         logger.info("VoxVeritas Application successfully started.")
+
+    # Mount static files at the root
+    import os
+    os.makedirs("src/static", exist_ok=True)
+    app.mount("/", StaticFiles(directory="src/static", html=True), name="static")
 
     return app
 

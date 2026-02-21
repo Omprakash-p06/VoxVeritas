@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxVeritas Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-container">
+        <header>
+            <h1>🎙️ VoxVeritas</h1>
+            <p>Voice-First Multilingual Accessibility Assistant</p>
+        </header>
+
+        <section class="controls">
+            <button id="record-btn" class="primary-btn">Hold to Speak</button>
+            
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="read-screen-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">Enable Screen Reading (Native OCR)</span>
+            </div>
+            <div id="status-indicator" class="status-indicator">Ready</div>
+        </section>
+
+        <section class="output">
+            <div class="card">
+                <h3>🗣️ You Said:</h3>
+                <p id="transcription-text" class="placeholder">Awaiting input...</p>
+            </div>
+            
+            <div class="card highlight">
+                <h3>🤖 VoxVeritas Answer:</h3>
+                <p id="answer-text" class="placeholder">Awaiting input...</p>
+            </div>
+        </section>
+
+        <!-- Hidden audio element to automatically play response -->
+        <audio id="playback-audio" controls style="display: none;"></audio>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
