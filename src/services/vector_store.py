@@ -17,7 +17,10 @@ except Exception as e:
 
 # Use default sentence-transformer miniLM for speed and reliability currently
 # The plan suggested l3cube-pune/indic-sentence-bert-nli, but all-MiniLM-L6-v2 is safely cached
-sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2",
+    device="cuda"
+)
 
 def get_collection() -> chromadb.Collection:
     """Gets or creates the main document collection."""

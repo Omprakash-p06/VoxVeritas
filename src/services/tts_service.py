@@ -29,6 +29,15 @@ class TTSService:
             # Load the kokoro pipeline.
             # a=American English, b=British English. 
             self.pipeline = KPipeline(lang_code=self.lang_code)
+            
+            # Move the underlying PyTorch model to GPU if available
+            import torch
+            if torch.cuda.is_available() and hasattr(self.pipeline, 'model'):
+                self.pipeline.model = self.pipeline.model.to("cuda")
+                logger.info("Kokoro TTS model moved to CUDA GPU.")
+            else:
+                logger.info("Kokoro TTS running on CPU (no CUDA or no model attribute).")
+            
             logger.info("Kokoro TTS pipeline loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load Kokoro TTS pipeline: {str(e)}")

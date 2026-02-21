@@ -51,7 +51,7 @@ class LLMService:
                 n_ctx=2048,      # Context window size
                 verbose=False    # Suppress verbose C++ logs
             )
-            logger.info("Model loaded successfully.")
+            logger.info("Model loaded successfully. GPU layers offloaded: ALL (-1)")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
