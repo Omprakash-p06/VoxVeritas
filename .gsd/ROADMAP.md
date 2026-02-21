@@ -32,7 +32,12 @@
 **Objective**: Implement desktop screen capture/OCR to read current screen content on voice trigger and feed it into the RAG context.
 **Requirements**: REQ-02
 
-### Phase 5: Safety Dashboard & Polish
+### Phase 5: Safety Evaluation & Terminal Testing
 **Status**: ⬜ Not Started
-**Objective**: Integrate Promptfoo for safety evaluations, build the simple frontend dashboard, and finalize the demo flow.
+**Objective**: Integrate Promptfoo for safety evaluations against the LLM pipeline, and write robust terminal scripts to demo the entire flow without a frontend.
 **Requirements**: REQ-06
+
+### Phase 6: External Frontend Integration
+**Status**: ⬜ Not Started
+**Objective**: Connect the completed, tested backend API to the externally developed frontend dashboard.
+**Requirements**: SPEC Goal 1, SPEC Goal 5
