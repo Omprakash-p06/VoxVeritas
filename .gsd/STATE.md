@@ -4,12 +4,12 @@
 > **Last Updated**: 2026-02-21
 
 ## Last Action
-- Finished executing Phase 4 (Plan 4.1: Screen Reader Service).
-- Successfully integrated Windows Native OCR via `winsdk` into the `/ask_voice` RAG pipeline.
+- Finished planning Phase 5 (Plan 5.1: Desktop Frontend Dashboard).
+- Decided on Vanilla HTML/JS/CSS served directly by FastAPI to avoid Node/React bloat and maximize control over VRAM.
+- Swapped Phase 5 and Phase 6 in ROADMAP to prioritize the UI per User instruction.
 
 ## Next Step
-- Phase 5: Build User Interface (Desktop Frontend).
-- This involves creating a persistent web dashboard that serves the API, so a new plan `5.1-PLAN.md` should be formulated.
+- `/execute 5` to build the frontend and serve it from `src/main.py`.
 
 
 ## Recent Changes
