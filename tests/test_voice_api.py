@@ -52,3 +52,20 @@ def test_ask_voice_endpoint(mock_audio_fixture):
     assert "answer" in data
     assert "audio_base64" in data
     assert len(data["audio_base64"]) > 0
+
+def test_ask_voice_endpoint_with_screen(mock_audio_fixture):
+    with open(mock_audio_fixture, "rb") as audio:
+        response = client.post(
+            "/ask_voice",
+            files={"file": ("fixture.wav", audio, "audio/wav")},
+            data={"read_screen": True}
+        )
+        
+    assert response.status_code == 200
+    data = response.json()
+    assert "transcription" in data
+    assert "answer" in data
+    
+    # Due to dynamic screen content we can't assert the exact contents of the answer
+    # but we can assert the pipeline ran without exploding the context window or throwing a 500
+    assert response.status_code == 200

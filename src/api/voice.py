@@ -3,11 +3,13 @@ import shutil
 import tempfile
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi import Form
 from pydantic import BaseModel
 from loguru import logger
 from src.services.stt_service import get_stt_service
 from src.services.tts_service import get_tts_service
 from src.services.rag_service import get_rag_service
+from src.services.screen_reader import get_screen_reader_service
 
 router = APIRouter()
 
@@ -78,16 +80,15 @@ async def synthesize_audio(request: SynthesizeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/ask_voice", summary="End-to-End Voice RAG Pipeline")
-async def ask_voice(file: UploadFile = File(...)):
+async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False)):
     """
     Receives an audio file containing a spoken question.
+    Optional: read_screen boolean parameter.
     1. Transcribes it into text using Whisper.
-    2. Runs the RAG pipeline to get a cited answer.
-    3. Synthesizes the answer text into audio using Kokoro.
-    4. Returns a JSON payload with data and a file response URL (actually, returning multi-part or streaming is complex, 
-    so we'll return a JSON structure but the frontend can fetch the audio via another hit or we can return base64. 
-    A simpler robust way for demo is just returning the audio file directly with custom headers, or base64).
-    Let's return a JSON with a base64 encoded audio string to be safe and easy for clients.
+    2. (Optional) Captures user's screen using Windows Native OCR and injects as context.
+    3. Runs the RAG pipeline to get a cited answer.
+    4. Synthesizes the answer text into audio using Kokoro.
+    5. Returns a JSON payload with data and audio b64.
     """
     import base64
 
@@ -105,9 +106,24 @@ async def ask_voice(file: UploadFile = File(...)):
         transcription = stt_service.transcribe_audio(temp_file_path)
         logger.info(f"Transcription: {transcription}")
         
+        # Screen Context Injection
+        screen_context = ""
+        if read_screen:
+            logger.info("Step 1.5: Capturing screen context via ScreenReaderService ...")
+            screen_service = get_screen_reader_service()
+            screen_text = screen_service.capture_and_read_screen()
+            if screen_text:
+                screen_context = f"\n[SYSTEM CONTEXT: The user is currently looking at their screen. Here is the exact extracted text from what they are currently viewing encoded via OCR:\n\"{screen_text}\"\nEnd of screen context.]\n"
+        
         logger.info(f"Step 2: Generation RAG Answer ...")
         rag_service = get_rag_service()
-        rag_response = rag_service.ask_question(transcription)
+        
+        # Inject the screen reading into the user prompt invisibly so the LLM responds.
+        final_prompt = transcription
+        if screen_context:
+            final_prompt = transcription + screen_context
+            
+        rag_response = rag_service.ask_question(final_prompt)
         
         logger.info(f"Step 3: Synthesizing TTS ...")
         tts_service = get_tts_service()

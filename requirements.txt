@@ -12,3 +12,5 @@ huggingface_hub
 openai-whisper
 kokoro
 soundfile
+winsdk
+Pillow
