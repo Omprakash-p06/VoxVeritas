@@ -12,7 +12,7 @@ class DocumentParser:
     def extract_text(file_path: str) -> str:
         """Extracts text from a given file path based on its extension."""
         ext = os.path.splitext(file_path)[1].lower()
-        if ext == '.txt':
+        if ext in ('.txt', '.md'):
             return DocumentParser._extract_txt(file_path)
         elif ext == '.pdf':
             return DocumentParser._extract_pdf(file_path)

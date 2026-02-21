@@ -7,3 +7,5 @@ python-docx
 chromadb
 sentence-transformers
 pytest
+llama-cpp-python
+huggingface_hub

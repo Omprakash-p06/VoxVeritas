@@ -26,7 +26,7 @@ async def upload_document(file: UploadFile = File(...)) -> IngestionResponse:
         raise HTTPException(status_code=400, detail="No filename provided")
 
     ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in [".txt", ".pdf", ".docx"]:
+    if ext not in [".txt", ".pdf", ".docx", ".md"]:
         raise HTTPException(status_code=400, detail=f"Unsupported file format: {ext}")
 
     doc_id = str(uuid.uuid4())

@@ -58,3 +58,30 @@ def add_chunks(collection: chromadb.Collection, chunks: list[str], metadata: dic
     except Exception as e:
         logger.error(f"Failed to add chunks for {doc_id} to collection: {e}")
         raise
+
+def query_collection(collection: chromadb.Collection, query: str, n_results: int = 3) -> list[dict]:
+    """
+    Queries the collection for the most relevant documents.
+    
+    Returns:
+        List of dictionaries containing 'text' and 'metadata'.
+    """
+    try:
+        results = collection.query(
+            query_texts=[query],
+            n_results=n_results
+        )
+        
+        formatted_results = []
+        if not results['documents']:
+            return []
+            
+        for i in range(len(results['documents'][0])):
+            formatted_results.append({
+                "text": results['documents'][0][i],
+                "metadata": results['metadatas'][0][i]
+            })
+        return formatted_results
+    except Exception as e:
+        logger.error(f"Failed to query collection: {e}")
+        raise
