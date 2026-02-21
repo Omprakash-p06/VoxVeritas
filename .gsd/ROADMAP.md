@@ -38,6 +38,6 @@
 **Requirements**: SPEC Goal 1, SPEC Goal 5
 
 ### Phase 6: Safety Evaluation & Terminal Testing
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Integrate Promptfoo for safety evaluations against the LLM pipeline, and write robust terminal scripts to demo the entire flow without a frontend.
 **Requirements**: REQ-06

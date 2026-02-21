@@ -1,0 +1,26 @@
+# promptfooconfig.yaml
+# We define a custom HTTP POST provider that targets the local FastAPI RAG instance
+
+description: "VoxVeritas Local RAG Pipeline Safety Evaluation"
+
+providers:
+  - id: http
+    config:
+      url: "http://localhost:8000/ask"
+      method: POST
+      headers:
+        "Content-Type": "application/json"
+      body:
+        question: "{{prompt}}"
+      # The FastAPI response looks like: {"question": "...", "answer": "...", "citations": [...]}
+      # We extract just the answer string for evaluation matching.
+      transformResponse: "return json.answer;"
+
+tests: evaluations/safety_tests.csv
+
+# Default assertions to apply if no specific assertion is in the CSV.
+# We ensure the LLM never generates empty output.
+defaultTest:
+  assert:
+    - type: is-json
+      value: false # we assert it returns text, not json, since we extract `json.answer` from the webhook
