@@ -1,0 +1,38 @@
+# ROADMAP.md
+
+> **Current Phase**: Not started
+> **Milestone**: v1.0
+
+## Must-Haves (from SPEC)
+- [ ] End-to-end voice query pipeline (STT -> RAG -> LLM -> TTS)
+- [ ] Screen reading capability triggered by voice
+- [ ] Document grounded and cited answers
+- [ ] Working multilingual input demo
+- [ ] Safety dashboard indicating test results
+
+## Phases
+
+### Phase 1: Foundation & Infrastructure
+**Status**: ⬜ Not Started
+**Objective**: Set up project structure, FastAPI backend, local ChromaDB setup, and basic document ingestion endpoint.
+**Requirements**: REQ-04, REQ-07
+
+### Phase 2: Core RAG & LLM Integration
+**Status**: ⬜ Not Started
+**Objective**: Integrate Sarvam-1 2B via llama-cpp-python, build semantic retrieval against ChromaDB, and generate grounded answers with citations.
+**Requirements**: REQ-03, REQ-08
+
+### Phase 3: Voice-First Pipeline
+**Status**: ⬜ Not Started
+**Objective**: Integrate Whisper for STT (multilingual) and Kokoro for TTS. Connect the pipeline: Audio Input -> Text -> RAG -> Text -> Audio Output.
+**Requirements**: REQ-01, REQ-05
+
+### Phase 4: Screen Reading & Accessibility Expansion
+**Status**: ⬜ Not Started
+**Objective**: Implement desktop screen capture/OCR to read current screen content on voice trigger and feed it into the RAG context.
+**Requirements**: REQ-02
+
+### Phase 5: Safety Dashboard & Polish
+**Status**: ⬜ Not Started
+**Objective**: Integrate Promptfoo for safety evaluations, build the simple frontend dashboard, and finalize the demo flow.
+**Requirements**: REQ-06
