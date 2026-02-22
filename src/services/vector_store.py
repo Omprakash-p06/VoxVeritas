@@ -74,7 +74,13 @@ def add_chunks(collection: chromadb.Collection, chunks: list[str], metadata: dic
         logger.error(f"Failed to add chunks for {doc_id} to collection: {e}")
         raise
 
-def query_collection(collection: chromadb.Collection, query: str, n_results: int = 4, max_distance: float = 2.2) -> list[dict]:
+def query_collection(
+    collection: chromadb.Collection,
+    query: str,
+    n_results: int = 4,
+    max_distance: float = 2.2,
+    where: dict | None = None,
+) -> list[dict]:
     """
     Queries the collection for the most relevant documents.
     Filters out results that have an L2 distance greater than max_distance.
@@ -85,7 +91,8 @@ def query_collection(collection: chromadb.Collection, query: str, n_results: int
     try:
         results = collection.query(
             query_texts=[query],
-            n_results=n_results
+            n_results=n_results,
+            where=where,
         )
         
         formatted_results = []
