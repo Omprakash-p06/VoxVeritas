@@ -99,6 +99,7 @@ export interface ChatRequest {
   prompt: string;
   max_tokens?: number;
   temperature?: number;
+  screen_context?: string;
 }
 
 export interface ChatDirectResponse {
@@ -114,6 +115,13 @@ export interface VoiceQueryResponse {
   citations: string[];
   audio_base64: string;
   model: string;
+}
+
+export interface ScreenOCRResponse {
+  status: string;
+  engine: string;
+  text: string;
+  chars: number;
 }
 
 // Standalone transcribe (/transcribe)

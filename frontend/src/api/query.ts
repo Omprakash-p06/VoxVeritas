@@ -9,13 +9,29 @@ import type {
 } from '@/types';
 
 /** RAG-grounded Q&A — POST /ask */
-export async function queryText(request: TextQueryRequest, readScreen: boolean = false): Promise<TextQueryResponse> {
-  return apiPost<TextQueryResponse>('/ask', { query: request.query, read_screen: readScreen });
+export async function queryText(
+  request: TextQueryRequest,
+  readScreen: boolean = false,
+  screenContext?: string,
+): Promise<TextQueryResponse> {
+  return apiPost<TextQueryResponse>('/ask', {
+    query: request.query,
+    read_screen: readScreen,
+    screen_context: screenContext,
+  });
 }
 
 /** Direct LLM chat (no document grounding) — POST /chat */
-export async function chatDirect(request: ChatRequest, readScreen: boolean = false): Promise<ChatDirectResponse> {
-  return apiPost<ChatDirectResponse>('/chat', { ...request, read_screen: readScreen });
+export async function chatDirect(
+  request: ChatRequest,
+  readScreen: boolean = false,
+  screenContext?: string,
+): Promise<ChatDirectResponse> {
+  return apiPost<ChatDirectResponse>('/chat', {
+    ...request,
+    read_screen: readScreen,
+    screen_context: screenContext,
+  });
 }
 
 /** Full voice RAG pipeline — POST /ask_voice */

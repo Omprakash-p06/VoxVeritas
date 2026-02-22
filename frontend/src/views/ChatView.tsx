@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { PixelSend, PixelFolder, PixelUpload } from '@/components/ui-custom/PixelIcons';
 import { queryText, queryVoice, chatDirect, synthesizeText } from '@/api/query';
+import { ocrUploadedScreenshot } from '@/api/screen';
 import { useAppStore } from '@/store/AppContext';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
@@ -19,6 +20,7 @@ export function ChatView() {
   const [isLoading, setIsLoading] = useState(false);
   const [citations, setCitations] = useState<string[]>([]);
   const [activeModel, setActiveModel] = useState<string>('NOT LOADED');
+  const [screenEngine, setScreenEngine] = useState<string>('');
 
   // Mode toggles
   const [useRAG, setUseRAG] = useState(true);           // RAG vs Direct LLM
@@ -71,6 +73,47 @@ export function ChatView() {
     }
   }, []);
 
+  const captureScreenContextForWeb = useCallback(async (): Promise<string> => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      throw new Error('Browser screen sharing API is not available. Use Chrome/Edge on HTTPS or localhost.');
+    }
+
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    try {
+      const video = document.createElement('video');
+      video.srcObject = stream;
+
+      await new Promise<void>((resolve) => {
+        video.onloadedmetadata = () => resolve();
+      });
+      await video.play();
+
+      const width = Math.max(video.videoWidth, 1);
+      const height = Math.max(video.videoHeight, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Could not initialize canvas context for screen capture.');
+      }
+
+      ctx.drawImage(video, 0, 0, width, height);
+      const screenshotBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to encode captured screen image.'));
+        }, 'image/png');
+      });
+
+      const ocrResponse = await ocrUploadedScreenshot(screenshotBlob);
+      setScreenEngine(ocrResponse.engine);
+      return ocrResponse.text;
+    } finally {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+  }, []);
+
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return;
 
@@ -86,9 +129,14 @@ export function ChatView() {
     setIsLoading(true);
 
     try {
+      let screenContext: string | undefined = undefined;
+      if (readScreen) {
+        screenContext = await captureScreenContextForWeb();
+      }
+
       if (useRAG) {
         // ── RAG mode: POST /ask ──
-        const response = await queryText({ query: userMessage.content }, readScreen);
+        const response = await queryText({ query: userMessage.content }, readScreen, screenContext);
         const systemMessage: ChatMessage = {
           id: generateId(),
           type: 'system',
@@ -108,7 +156,7 @@ export function ChatView() {
         }
       } else {
         // ── Direct LLM mode: POST /chat ──
-        const response = await chatDirect({ prompt: userMessage.content }, readScreen);
+        const response = await chatDirect({ prompt: userMessage.content }, readScreen, screenContext);
         const systemMessage: ChatMessage = {
           id: generateId(),
           type: 'system',
@@ -137,7 +185,7 @@ export function ChatView() {
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, isLoading, addMessage, useRAG, readScreen, ttsEnabled, playBlobAudio]);
+  }, [inputValue, isLoading, addMessage, useRAG, readScreen, ttsEnabled, playBlobAudio, captureScreenContextForWeb]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -384,6 +432,11 @@ export function ChatView() {
               <p className="pixel-text-sm text-[var(--color-text-secondary)] mt-1">
                 SCREEN OCR: <span className={readScreen ? 'text-[var(--color-success)]' : 'text-[var(--color-text-disabled)]'}>{readScreen ? 'ON' : 'OFF'}</span>
               </p>
+              {screenEngine && (
+                <p className="pixel-text-sm text-[var(--color-text-secondary)] mt-1">
+                  OCR ENGINE: <span className="text-[var(--color-primary)]">{screenEngine}</span>
+                </p>
+              )}
               <p className="pixel-text-sm text-[var(--color-text-secondary)] mt-1">
                 DOCS: {documents.length}
               </p>

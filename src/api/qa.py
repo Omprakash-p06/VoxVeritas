@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     max_tokens: int = 512
     temperature: float = 0.2
     read_screen: bool = False
+    screen_context: str | None = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -19,6 +20,7 @@ class QARequest(BaseModel):
     query: str
     mode: str = "rag"
     read_screen: bool = False
+    screen_context: str | None = None
 
 router = APIRouter()
 
@@ -32,6 +34,7 @@ async def chat(request: ChatRequest, service: RAGService = Depends(get_rag_servi
             query=request.prompt,
             mode="chat",
             read_screen=request.read_screen,
+            screen_context_override=request.screen_context,
         )
         return ChatResponse(response=rag_result.answer, model=rag_result.model, citations=rag_result.citations)
     except Exception as e:
@@ -44,7 +47,12 @@ async def ask(request: QARequest, service: RAGService = Depends(get_rag_service)
     Performs grounded QA using retrieved document context.
     """
     try:
-        return service.ask_question(query=request.query, mode=request.mode, read_screen=request.read_screen)
+        return service.ask_question(
+            query=request.query,
+            mode=request.mode,
+            read_screen=request.read_screen,
+            screen_context_override=request.screen_context,
+        )
     except Exception as e:
         logger.error(f"QA endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

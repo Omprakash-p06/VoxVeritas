@@ -144,6 +144,26 @@ class ScreenReaderService:
     def get_engine_name(self) -> str:
         return self.engine_name
 
+    def read_image_file(self, file_path: str) -> str:
+        """Extract text from a provided image file using the active OCR engine."""
+        if not self.engine:
+            logger.error("Screen reader engine not initialized. Cannot OCR uploaded image.")
+            return ""
+
+        try:
+            if self.is_windows and self.engine_name == "winsdk":
+                text = self._extract_text_windows_sync(file_path)
+            elif self.engine_name == "tesseract":
+                text = self._extract_text_tesseract(file_path)
+            else:
+                text = ""
+
+            logger.info(f"Image OCR complete. Extracted {len(text)} characters.")
+            return text.strip()
+        except Exception as e:
+            logger.error(f"read_image_file failed: {e}")
+            return ""
+
     def capture_and_read_screen(self) -> str:
         """
         Synchronous wrapper: Grabs the current screen using Pillow, saves a temporary PNG, 
