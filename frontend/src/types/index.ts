@@ -90,6 +90,7 @@ export interface TextQueryRequest {
 export interface TextQueryResponse {
   answer: string;
   citations: string[];
+  model: string;
 }
 
 // Direct LLM chat (/chat)
@@ -101,6 +102,7 @@ export interface ChatRequest {
 
 export interface ChatDirectResponse {
   response: string;
+  model: string;
 }
 
 // Voice RAG (/ask_voice)
@@ -109,6 +111,7 @@ export interface VoiceQueryResponse {
   answer: string;
   citations: string[];
   audio_base64: string;
+  model: string;
 }
 
 // Standalone transcribe (/transcribe)

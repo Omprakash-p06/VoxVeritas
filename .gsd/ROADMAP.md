@@ -4,16 +4,16 @@
 > **Milestone**: v1.0
 
 ## Must-Haves (from SPEC)
-- [ ] End-to-end voice query pipeline (STT -> RAG -> LLM -> TTS)
-- [ ] Screen reading capability triggered by voice
-- [ ] Document grounded and cited answers
-- [ ] Working multilingual input demo
-- [ ] Safety dashboard indicating test results
+- [x] End-to-end voice query pipeline (STT -> RAG -> LLM -> TTS)
+- [x] Screen reading capability triggered by voice
+- [x] Document grounded and cited answers
+- [x] Working multilingual input demo
+- [x] Safety dashboard indicating test results
 
 ## Phases
 
 ### Phase 1: Foundation & Infrastructure
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Set up project structure, FastAPI backend, local ChromaDB setup, and basic document ingestion endpoint.
 **Requirements**: REQ-04, REQ-07
 

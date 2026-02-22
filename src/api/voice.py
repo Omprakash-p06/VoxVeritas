@@ -9,7 +9,6 @@ from loguru import logger
 from src.services.stt_service import get_stt_service
 from src.services.tts_service import get_tts_service
 from src.services.rag_service import get_rag_service
-from src.services.screen_reader import get_screen_reader_service
 
 router = APIRouter()
 
@@ -106,32 +105,18 @@ async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False
         transcription = stt_service.transcribe_audio(temp_file_path)
         logger.info(f"Transcription: {transcription}")
         
-        # Screen Context Injection
-        screen_context = ""
-        if read_screen:
-            logger.info("Step 1.5: Capturing screen context via ScreenReaderService ...")
-            screen_service = get_screen_reader_service()
-            screen_text = screen_service.capture_and_read_screen()
-            if screen_text:
-                screen_context = f"\n[SYSTEM CONTEXT: The user is currently looking at their screen. Here is the exact extracted text from what they are currently viewing encoded via OCR:\n\"{screen_text}\"\nEnd of screen context.]\n"
-        
         logger.info(f"Step 2: Generation RAG Answer ...")
         rag_service = get_rag_service()
-        
-        # Inject the screen reading into the user prompt invisibly so the LLM responds.
-        final_prompt = transcription
-        if screen_context:
-            final_prompt = transcription + screen_context
-            
+
         mode_str = "chat" if chat_mode else "rag"
-        rag_response = rag_service.ask_question(final_prompt, mode=mode_str)
+        rag_response = rag_service.ask_question(transcription, mode=mode_str, read_screen=read_screen)
         
         logger.info(f"Step 3: Synthesizing TTS ...")
         tts_service = get_tts_service()
         output_path = tts_service.generate_audio(rag_response.answer, output_filename="pipelined_response.wav")
         
-        # Parse citations
-        citation_texts = [f"[{c.source_file}]" for c in rag_response.citations]
+        # Citations are already a list of source filenames.
+        citation_texts = rag_response.citations
         
         # Read the generated TTS file and convert to base64
         with open(output_path, "rb") as f:
@@ -141,7 +126,8 @@ async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False
             "transcription": transcription,
             "answer": rag_response.answer,
             "citations": citation_texts,
-            "audio_base64": audio_b64
+            "audio_base64": audio_b64,
+            "model": rag_response.model,
         })
 
     except Exception as e:

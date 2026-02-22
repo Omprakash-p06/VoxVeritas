@@ -4,6 +4,11 @@ from chromadb.utils import embedding_functions
 from loguru import logger
 import os
 
+try:
+    import torch
+except Exception:
+    torch = None
+
 # Initialize persistent ChromaDB client
 PERSIST_DIRECTORY = ".data/chromadb"
 os.makedirs(PERSIST_DIRECTORY, exist_ok=True)
@@ -15,11 +20,18 @@ except Exception as e:
     logger.error(f"Failed to initialize ChromaDB: {e}")
     raise
 
-# Use default sentence-transformer miniLM for speed and reliability currently
-# The plan suggested l3cube-pune/indic-sentence-bert-nli, but all-MiniLM-L6-v2 is safely cached
+# Use default sentence-transformer miniLM for speed and reliability.
+# Prefer CUDA when available, otherwise fall back to CPU.
+_embedding_device = "cpu"
+if torch is not None:
+    try:
+        _embedding_device = "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        _embedding_device = "cpu"
+
 sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="all-MiniLM-L6-v2",
-    device="cuda"
+    device=_embedding_device
 )
 
 def get_collection() -> chromadb.Collection:
@@ -62,7 +74,7 @@ def add_chunks(collection: chromadb.Collection, chunks: list[str], metadata: dic
         logger.error(f"Failed to add chunks for {doc_id} to collection: {e}")
         raise
 
-def query_collection(collection: chromadb.Collection, query: str, n_results: int = 3, max_distance: float = 1.6) -> list[dict]:
+def query_collection(collection: chromadb.Collection, query: str, n_results: int = 4, max_distance: float = 2.2) -> list[dict]:
     """
     Queries the collection for the most relevant documents.
     Filters out results that have an L2 distance greater than max_distance.
@@ -90,8 +102,17 @@ def query_collection(collection: chromadb.Collection, query: str, n_results: int
                     
             formatted_results.append({
                 "text": results['documents'][0][i],
-                "metadata": results['metadatas'][0][i]
+                "metadata": results['metadatas'][0][i] or {}
             })
+
+        # If strict distance filtering removed everything, fall back to top-k so RAG still has context.
+        if not formatted_results and results.get('documents') and results['documents'][0]:
+            logger.warning("All chunks filtered by distance; falling back to top retrieval results.")
+            for i in range(min(2, len(results['documents'][0]))):
+                formatted_results.append({
+                    "text": results['documents'][0][i],
+                    "metadata": (results.get('metadatas') or [[{}]])[0][i] or {}
+                })
             
         return formatted_results
     except Exception as e:

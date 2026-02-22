@@ -117,12 +117,11 @@ class ScreenReaderService:
             logger.debug(f"Image saved to {temp_path}, running OCR...")
             
             if self.is_windows:
+                loop = asyncio.new_event_loop()
                 try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                text = loop.run_until_complete(self._extract_text_windows_async(temp_path))
+                    text = loop.run_until_complete(self._extract_text_windows_async(temp_path))
+                finally:
+                    loop.close()
             elif self.is_linux:
                 text = self._extract_text_linux(temp_path)
             else:

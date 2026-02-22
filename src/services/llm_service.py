@@ -14,9 +14,9 @@ MODEL_CONFIGS = {
         "name": "Sarvam-1 2B (RAG Mode)"
     },
     "chat": {
-        "repo_id": "bartowski/Llama-3.2-3B-Instruct-GGUF",
-        "filename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-        "name": "Llama-3.2 3B (Chat Mode)"
+        "repo_id": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+        "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+        "name": "Qwen2.5 3B Instruct (Chat Mode)"
     }
 }
 
@@ -26,6 +26,7 @@ class LLMService:
     def __init__(self, default_mode: str = "rag"):
         self.llm = None
         self.current_mode = None
+        self.compute_backend = "cpu"
         
         os.makedirs(MODELS_DIR, exist_ok=True)
         self.load_model(default_mode)
@@ -75,12 +76,22 @@ class LLMService:
         # 3. Load new model
         logger.info(f"Loading new model: {model_path}")
         
-        # Determine GPU layer count
+        # Prefer GPU offload when CUDA is available.
         n_gpu = 0
+        gpu_offload_supported = False
         try:
+            import torch
             import llama_cpp
-            if hasattr(llama_cpp, 'llama_supports_gpu_offload') and llama_cpp.llama_supports_gpu_offload():
+
+            cuda_available = torch.cuda.is_available()
+            gpu_offload_supported = bool(
+                hasattr(llama_cpp, 'llama_supports_gpu_offload') and llama_cpp.llama_supports_gpu_offload()
+            )
+
+            if cuda_available and gpu_offload_supported:
                 n_gpu = -1
+            elif cuda_available and not gpu_offload_supported:
+                logger.warning("CUDA detected, but llama-cpp-python was built without GPU offload support.")
         except Exception as e:
             logger.warning(f"GPU detection failed ({e}), defaulting to CPU.")
             
@@ -92,7 +103,8 @@ class LLMService:
                 verbose=False
             )
             self.current_mode = mode
-            logger.success(f"Successfully loaded {config['name']} on {'GPU' if n_gpu == -1 else 'CPU'}")
+            self.compute_backend = "gpu" if n_gpu == -1 else "cpu"
+            logger.success(f"Successfully loaded {config['name']} on {self.compute_backend.upper()}")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
@@ -100,8 +112,11 @@ class LLMService:
     def get_current_model_info(self) -> dict:
         """Returns metadata about the active model."""
         if self.current_mode:
-            return MODEL_CONFIGS[self.current_mode]
-        return {"name": "None", "filename": "None"}
+            info = dict(MODEL_CONFIGS[self.current_mode])
+            info["mode"] = self.current_mode
+            info["compute_backend"] = self.compute_backend
+            return info
+        return {"name": "None", "filename": "None", "mode": "none", "compute_backend": "cpu"}
 
     def generate_response(self, prompt: str, mode: str = "rag", max_tokens: int = 512, temperature: float = 0.7) -> str:
         """

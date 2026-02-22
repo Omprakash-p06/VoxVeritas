@@ -7,6 +7,7 @@ from typing import List
 class RAGResponse(BaseModel):
     answer: str
     citations: List[str]
+    model: str
 
 class RAGService:
     """Orchestrates query retrieval and LLM generation for grounded answers."""
@@ -31,7 +32,11 @@ class RAGService:
 
         # 2. Handle Direct Chat Mode
         if mode == "chat":
-            system_prompt = "You are VoxVeritas, a highly intelligent AI assistant. Use provided context if available."
+            system_prompt = (
+                "You are VoxVeritas, a factual assistant. "
+                "Prefer concise, accurate answers. If asked about uploaded documents and you do not have evidence, "
+                "explicitly say you do not have enough document context."
+            )
             prompt_body = query
             if ocr_context:
                 prompt_body = f"SCREEN CONTEXT: {ocr_context}\n\nUSER QUERY: {query}"
@@ -39,18 +44,17 @@ class RAGService:
             chat_payload = f"<|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt_body}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
             
             answer = self.llm_service.generate_response(chat_payload, mode="chat", max_tokens=1024)
-            return RAGResponse(answer=answer, citations=[])
+            model_name = self.llm_service.get_current_model_info().get("name", "Unknown")
+            return RAGResponse(answer=answer, citations=[], model=model_name)
 
         # 3. Handle RAG Mode
         context_items = query_collection(self.collection, query)
         
         # 4. Fallback if no context at all
         if not context_items and not ocr_context:
-            fallback_prompt = f"No relevant documents or screen context found for: {query}. Briefly inform the user."
-            answer = self.llm_service.generate_response(fallback_prompt, mode="rag", max_tokens=128)
-            if "no documents found" not in answer.lower() and "context found" not in answer.lower():
-                answer = "No relevant context found. " + answer
-            return RAGResponse(answer=answer, citations=[])
+            answer = "I couldn't find relevant information in uploaded documents or screen OCR context for this query."
+            model_name = self.llm_service.get_current_model_info().get("name", "Unknown")
+            return RAGResponse(answer=answer, citations=[], model=model_name)
 
         # 5. Build prompt with available context
         context_parts = []
@@ -66,22 +70,27 @@ class RAGService:
             
         full_context = "\n\n".join(context_parts)
         
-        prompt = f"""You are VoxVeritas, an accessibility assistant. Use the provided context to answer the user's question accurately.
-Always cite your sources if they come from a document.
+        prompt = f"""You are VoxVeritas, an accessibility assistant.
+    Strict grounding rules:
+    1) Answer ONLY from the context below.
+    2) If context is insufficient, say exactly: "Insufficient context from uploaded documents."
+    3) Do not invent facts.
+    4) Keep the answer concise.
 
 Context:
 {full_context}
 
 Question: {query}
-Answer:"""
+    Answer:"""
 
         # 6. Generate and return
         answer = self.llm_service.generate_response(prompt, mode="rag", max_tokens=1024)
         citations = []
         if context_items:
             citations = list(set([item['metadata'].get('filename', 'Unknown') for item in context_items if 'filename' in item['metadata']]))
-        
-        return RAGResponse(answer=answer, citations=citations)
+
+        model_name = self.llm_service.get_current_model_info().get("name", "Unknown")
+        return RAGResponse(answer=answer, citations=citations, model=model_name)
 
 # Singleton instance
 _rag_instance = None

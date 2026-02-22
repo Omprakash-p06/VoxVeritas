@@ -7,11 +7,12 @@ from loguru import logger
 class ChatRequest(BaseModel):
     prompt: str
     max_tokens: int = 512
-    temperature: float = 0.7
+    temperature: float = 0.2
     read_screen: bool = False
 
 class ChatResponse(BaseModel):
     response: str
+    model: str
 
 class QARequest(BaseModel):
     query: str
@@ -35,12 +36,17 @@ async def chat(request: ChatRequest, service: LLMService = Depends(get_llm_servi
                 prompt = f"SCREEN CONTEXT: {ocr_text}\n\nUSER PROMPT: {prompt}"
 
         response_text = service.generate_response(
-            prompt=prompt,
+            prompt=(
+                "You are VoxVeritas. Provide factual, concise answers. "
+                "If you are uncertain, clearly say so.\n\n"
+                f"User: {prompt}\nAssistant:"
+            ),
             max_tokens=request.max_tokens,
             temperature=request.temperature,
             mode="chat"
         )
-        return ChatResponse(response=response_text)
+        model_name = service.get_current_model_info().get("name", "Unknown")
+        return ChatResponse(response=response_text, model=model_name)
     except Exception as e:
         logger.error(f"Chat endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

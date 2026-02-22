@@ -18,6 +18,7 @@ export function ChatView() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [citations, setCitations] = useState<string[]>([]);
+  const [activeModel, setActiveModel] = useState<string>('NOT LOADED');
 
   // Mode toggles
   const [useRAG, setUseRAG] = useState(true);           // RAG vs Direct LLM
@@ -96,6 +97,7 @@ export function ChatView() {
         };
         addMessage(systemMessage);
         setCitations(response.citations);
+        setActiveModel(response.model || 'UNKNOWN');
 
         // Auto-TTS if enabled
         if (ttsEnabled) {
@@ -115,6 +117,7 @@ export function ChatView() {
         };
         addMessage(systemMessage);
         setCitations([]);
+        setActiveModel(response.model || 'UNKNOWN');
 
         if (ttsEnabled) {
           try {
@@ -134,7 +137,7 @@ export function ChatView() {
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, isLoading, addMessage, useRAG, ttsEnabled, playBlobAudio]);
+  }, [inputValue, isLoading, addMessage, useRAG, readScreen, ttsEnabled, playBlobAudio]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -177,6 +180,7 @@ export function ChatView() {
       };
       addMessage(systemMessage);
       setCitations(response.citations);
+      setActiveModel(response.model || 'UNKNOWN');
 
       // Auto-play the TTS audio from voice pipeline
       if (response.audio_base64) {
@@ -206,7 +210,7 @@ export function ChatView() {
           <span className="text-[var(--color-primary)]">{'>'}</span>
           <span className="pixel-text font-bold text-[var(--color-text-primary)]">CHAT</span>
           <div className="ml-4 px-2 py-0.5 border-2 border-[var(--color-primary)] bg-[var(--color-primary-dim)] text-[var(--color-primary)] pixel-text-xs">
-            ⚡ MODEL: {useRAG ? 'SARVAM-1 (RAG)' : 'LLAMA-3.2 (DIRECT)'}
+            ⚡ MODEL: {activeModel}
           </div>
         </div>
         <div className="flex items-center gap-4">
