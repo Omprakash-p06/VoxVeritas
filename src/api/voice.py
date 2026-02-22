@@ -80,7 +80,7 @@ async def synthesize_audio(request: SynthesizeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/ask_voice", summary="End-to-End Voice RAG Pipeline")
-async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False)):
+async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False), chat_mode: bool = Form(False)):
     """
     Receives an audio file containing a spoken question.
     Optional: read_screen boolean parameter.
@@ -123,7 +123,8 @@ async def ask_voice(file: UploadFile = File(...), read_screen: bool = Form(False
         if screen_context:
             final_prompt = transcription + screen_context
             
-        rag_response = rag_service.ask_question(final_prompt)
+        mode_str = "chat" if chat_mode else "rag"
+        rag_response = rag_service.ask_question(final_prompt, mode=mode_str)
         
         logger.info(f"Step 3: Synthesizing TTS ...")
         tts_service = get_tts_service()

@@ -62,9 +62,10 @@ def add_chunks(collection: chromadb.Collection, chunks: list[str], metadata: dic
         logger.error(f"Failed to add chunks for {doc_id} to collection: {e}")
         raise
 
-def query_collection(collection: chromadb.Collection, query: str, n_results: int = 3) -> list[dict]:
+def query_collection(collection: chromadb.Collection, query: str, n_results: int = 3, max_distance: float = 1.6) -> list[dict]:
     """
     Queries the collection for the most relevant documents.
+    Filters out results that have an L2 distance greater than max_distance.
     
     Returns:
         List of dictionaries containing 'text' and 'metadata'.
@@ -80,10 +81,18 @@ def query_collection(collection: chromadb.Collection, query: str, n_results: int
             return []
             
         for i in range(len(results['documents'][0])):
+            # Filter by matching distance
+            if 'distances' in results and results['distances']:
+                distance = results['distances'][0][i]
+                if distance > max_distance:
+                    logger.debug(f"Filtering out context chunk due to high distance: {distance:.3f} > {max_distance}")
+                    continue
+                    
             formatted_results.append({
                 "text": results['documents'][0][i],
                 "metadata": results['metadatas'][0][i]
             })
+            
         return formatted_results
     except Exception as e:
         logger.error(f"Failed to query collection: {e}")

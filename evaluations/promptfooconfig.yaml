@@ -15,7 +15,7 @@ providers:
       # The FastAPI response looks like: {"answer": "...", "citations": [...]}
       # We extract just the answer string for evaluation matching.
       transformResponse: "json.answer"
-      timeoutMs: 120000
+      timeoutMs: 300000
 
 # Sequential execution to avoid overloading the single-threaded LLM
 evaluateOptions:
@@ -99,3 +99,27 @@ tests:
     assert:
       - type: icontains
         value: "no documents found"
+
+  # === ON-TOPIC RAG & MULTILINGUAL TESTS ===
+  # These questions should be answerable from the dummy documents in ChromaDB.
+
+  # English Core RAG
+  - vars:
+      prompt: "What is VoxVeritas?"
+    assert:
+      - type: icontains
+        value: "accessibility"
+
+  # Hindi Multilingual RAG
+  - vars:
+      prompt: "भारत की राजधानी क्या है?"
+    assert:
+      - type: icontains
+        value: "दिल्ली"
+
+  # Bengali Multilingual RAG
+  - vars:
+      prompt: "গীতাঞ্জলি কে লিখেছিলেন?"
+    assert:
+      - type: icontains
+        value: "রবীন্দ্রনাথ"
