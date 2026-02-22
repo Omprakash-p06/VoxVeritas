@@ -1,99 +1,129 @@
 import os
+import gc
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama
 from loguru import logger
 
 # Constants for default model
-# Using Qwen2.5-1.5B-Instruct-GGUF as it is high quality and very compact
-DEFAULT_REPO_ID = "bartowski/sarvam-1-GGUF"
-DEFAULT_FILENAME = "sarvam-1-Q4_K_M.gguf"
 MODELS_DIR = ".data/models"
 
-class LLMService:
-    """Service for interacting with a local GGUF language model via llama-cpp-python."""
+MODEL_CONFIGS = {
+    "rag": {
+        "repo_id": "QuantFactory/sarvam-1-GGUF",
+        "filename": "sarvam-1-Q4_K_M.gguf",
+        "name": "Sarvam-1 2B (RAG Mode)"
+    },
+    "chat": {
+        "repo_id": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+        "filename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        "name": "Llama-3.2 3B (Chat Mode)"
+    }
+}
 
-    def __init__(self, repo_id: str = DEFAULT_REPO_ID, filename: str = DEFAULT_FILENAME):
-        self.repo_id = repo_id
-        self.filename = filename
-        self.model_path = os.path.join(MODELS_DIR, filename)
+class LLMService:
+    """Service for interacting with local LLMs via llama-cpp, supporting model hot-swaps."""
+
+    def __init__(self, default_mode: str = "rag"):
         self.llm = None
+        self.current_mode = None
         
         os.makedirs(MODELS_DIR, exist_ok=True)
-        self._ensure_model_downloaded()
-        self._load_model()
+        self.load_model(default_mode)
 
-    def _ensure_model_downloaded(self):
+    def _ensure_model_downloaded(self, repo_id: str, filename: str) -> str:
         """Downloads the model from HuggingFace Hub if it doesn't exist locally."""
-        if not os.path.exists(self.model_path):
-            logger.info(f"Downloading model {self.filename} from {self.repo_id}...")
+        model_path = os.path.join(MODELS_DIR, filename)
+        if not os.path.exists(model_path):
+            logger.info(f"Downloading model {filename} from {repo_id}...")
             try:
                 downloaded_path = hf_hub_download(
-                    repo_id=self.repo_id,
-                    filename=self.filename,
+                    repo_id=repo_id,
+                    filename=filename,
                     local_dir=MODELS_DIR,
                     local_dir_use_symlinks=False
                 )
-                self.model_path = downloaded_path
-                logger.info(f"Model successfully downloaded to {self.model_path}")
+                logger.info(f"Model successfully downloaded to {downloaded_path}")
+                return downloaded_path
             except Exception as e:
                 logger.error(f"Failed to download model: {e}")
                 raise
         else:
-            logger.info(f"Using cached model at {self.model_path}")
+            logger.info(f"Using cached model at {model_path}")
+            return model_path
 
-    def _load_model(self):
-        """Loads the GGUF model into memory/VRAM using llama-cpp."""
-        logger.info(f"Loading model: {self.model_path}")
+    def load_model(self, mode: str):
+        """Swaps the current model in VRAM for the requested mode's model."""
+        if mode not in MODEL_CONFIGS:
+            raise ValueError(f"Unknown model mode: {mode}")
+            
+        if self.current_mode == mode and self.llm is not None:
+            return # Already loaded
+            
+        config = MODEL_CONFIGS[mode]
+        logger.info(f"Switching LLM to mode '{mode}' ({config['name']})")
         
-        # Determine GPU layer count based on available backends
+        # 1. Unload existing model to free VRAM
+        if self.llm is not None:
+            logger.info("Unloading previous model from VRAM...")
+            del self.llm
+            self.llm = None
+            gc.collect()
+            
+        # 2. Ensure new model exists locally
+        model_path = self._ensure_model_downloaded(config["repo_id"], config["filename"])
+            
+        # 3. Load new model
+        logger.info(f"Loading new model: {model_path}")
+        
+        # Determine GPU layer count
         n_gpu = 0
         try:
             import llama_cpp
-            # Check if CUDA backend is available in llama-cpp-python
             if hasattr(llama_cpp, 'llama_supports_gpu_offload') and llama_cpp.llama_supports_gpu_offload():
-                n_gpu = -1  # Offload all layers
-                logger.info("llama-cpp CUDA backend detected — offloading ALL layers to GPU.")
-            else:
-                # Also try checking via torch
-                import torch
-                if torch.cuda.is_available():
-                    logger.warning("PyTorch has CUDA but llama-cpp-python was NOT compiled with GPU support.")
-                    logger.warning("Running LLM on CPU. To enable GPU, install llama-cpp-python with CUDA wheels.")
-                else:
-                    logger.info("No GPU backend available — running LLM on CPU.")
+                n_gpu = -1
         except Exception as e:
             logger.warning(f"GPU detection failed ({e}), defaulting to CPU.")
-        
+            
         try:
             self.llm = Llama(
-                model_path=self.model_path,
+                model_path=model_path,
                 n_gpu_layers=n_gpu,
-                n_ctx=2048,
+                n_ctx=4096, # Bumped ctx for Llama chat
                 verbose=False
             )
-            device_label = "GPU (all layers)" if n_gpu == -1 else "CPU"
-            logger.info(f"Model loaded successfully on {device_label}.")
+            self.current_mode = mode
+            logger.success(f"Successfully loaded {config['name']} on {'GPU' if n_gpu == -1 else 'CPU'}")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
 
-    def generate_response(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
+    def get_current_model_info(self) -> dict:
+        """Returns metadata about the active model."""
+        if self.current_mode:
+            return MODEL_CONFIGS[self.current_mode]
+        return {"name": "None", "filename": "None"}
+
+    def generate_response(self, prompt: str, mode: str = "rag", max_tokens: int = 512, temperature: float = 0.7) -> str:
         """
-        Generates a response from the LLM based on the given prompt.
+        Generates a response. Will auto-swap the underlying LLM if the requested mode 
+        differs from the currently loaded one.
         """
+        # Auto-swap model if necessary
+        if mode != self.current_mode:
+            self.load_model(mode)
+            
         if not self.llm:
             raise RuntimeError("Model is not loaded.")
 
-        logger.debug(f"Generating response for prompt length {len(prompt)}")
+        logger.debug(f"Generating ({self.current_mode} mode) response for prompt length {len(prompt)}")
         
         try:
-            # Simple wrapper for chat completion style if desired, 
-            # but for now using basic __call__
+            stop_tokens = ["<|im_end|>", "<|endoftext|>", "<|eot_id|>"] # Added Llama 3 stop token
             response = self.llm(
                 prompt,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stop=["<|im_end|>", "<|endoftext|>"]
+                stop=stop_tokens
             )
             return response['choices'][0]['text'].strip()
         except Exception as e:
