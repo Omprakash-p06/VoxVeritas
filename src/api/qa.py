@@ -14,6 +14,7 @@ class ChatResponse(BaseModel):
 
 class QARequest(BaseModel):
     query: str
+    mode: str = "rag"
 
 router = APIRouter()
 
@@ -40,7 +41,7 @@ async def ask(request: QARequest, service: RAGService = Depends(get_rag_service)
     Performs grounded QA using retrieved document context.
     """
     try:
-        return service.ask_question(query=request.query)
+        return service.ask_question(query=request.query, mode=request.mode)
     except Exception as e:
         logger.error(f"QA endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

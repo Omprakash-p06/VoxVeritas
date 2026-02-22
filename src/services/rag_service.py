@@ -15,12 +15,24 @@ class RAGService:
         self.collection = get_collection()
         self.llm_service = get_llm_service()
 
-    def ask_question(self, query: str) -> RAGResponse:
+    def ask_question(self, query: str, mode: str = "rag") -> RAGResponse:
         """
-        Processes a user query: retrieves context, builds a prompt, and generates a cited answer.
+        Processes a user query.
+        If mode is 'chat', it sends the query directly to the chat LLM.
+        If mode is 'rag', it retrieves context, builds a prompt, and generates a cited answer.
         """
-        logger.info(f"Processing RAG query: {query}")
+        logger.info(f"Processing {mode.upper()} query: {query}")
         
+        if mode == "chat":
+            prompt = f"<|im_start|>user\n{query}<|im_end|>\n<|im_start|>assistant\n"
+            try:
+                answer = self.llm_service.generate_response(prompt, mode="chat", max_tokens=1024)
+                return RAGResponse(answer=answer, citations=[])
+            except Exception as e:
+                logger.error(f"Error in CHAT pipeline: {e}")
+                raise
+                
+        # --- RAG Mode Logic ---
         # 1. Retrieve context
         context_items = query_collection(self.collection, query)
         
@@ -39,7 +51,7 @@ You MUST follow these rules EXACTLY:
 4. Keep your response to 1-2 sentences maximum.
 
 Response:"""
-            answer = self.llm_service.generate_response(fallback_prompt, max_tokens=128)
+            answer = self.llm_service.generate_response(fallback_prompt, mode="rag", max_tokens=128)
             # Hard safety net: prepend "No documents found." if the LLM didn't include it
             if "no documents found" not in answer.lower():
                 answer = "No documents found. " + answer
@@ -63,7 +75,7 @@ Answer:"""
 
         # 3. Generate response
         try:
-            answer = self.llm_service.generate_response(prompt, max_tokens=512)
+            answer = self.llm_service.generate_response(prompt, mode="rag", max_tokens=512)
             
             # Extract citations from metadata
             citations = list(set([item['metadata'].get('filename', 'Unknown') for item in context_items if 'filename' in item['metadata']]))
