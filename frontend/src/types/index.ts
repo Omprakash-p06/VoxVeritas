@@ -21,6 +21,7 @@ export interface HealthStatus {
   models: {
     llm: string;
     llm_loaded: boolean;
+    llm_backend: string;
     stt: string;
     stt_loaded: boolean;
     tts: string;

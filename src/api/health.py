@@ -7,6 +7,7 @@ import torch
 class ModelsStatus(BaseModel):
     llm: str
     llm_loaded: bool
+    llm_backend: str
     stt: str
     stt_loaded: bool
     tts: str
@@ -47,11 +48,14 @@ async def check_health() -> HealthResponse:
         _tts_instance = getattr(TTSService, "_instance", None)
 
         llm_loaded = _llm_instance is not None and getattr(_llm_instance, "llm", None) is not None
-        active_llm_name = _llm_instance.get_current_model_info()['name'] if llm_loaded else "None"
+        llm_info = _llm_instance.get_current_model_info() if llm_loaded else {}
+        active_llm_name = llm_info.get('name', 'None') if llm_loaded else "None"
+        active_llm_backend = llm_info.get('compute_backend', 'cpu') if llm_loaded else "cpu"
 
         models = ModelsStatus(
             llm=active_llm_name,
             llm_loaded=llm_loaded,
+            llm_backend=active_llm_backend,
             stt="openai/whisper-base",
             stt_loaded=_stt_instance is not None and getattr(_stt_instance, "model", None) is not None,
             tts="kokoro-tts",
@@ -63,6 +67,7 @@ async def check_health() -> HealthResponse:
         logger.warning(f"Models health check failed: {e}")
         models = ModelsStatus(
             llm="bartowski/sarvam-1-GGUF", llm_loaded=False,
+            llm_backend="cpu",
             stt="openai/whisper-base", stt_loaded=False,
             tts="kokoro-tts", tts_loaded=False,
             embedder="all-MiniLM-L6-v2", embedder_loaded=False,

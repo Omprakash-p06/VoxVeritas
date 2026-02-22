@@ -12,6 +12,11 @@
 
 ## Phases
 
+> [!NOTE]
+> All phases for **Milestone v1.0** have been archived to [.gsd/milestones/v1.0](file:///c:/Users/OM%20Prakash/Documents/VoxVeritas/.gsd/milestones/v1.0).
+> 
+> Use `/new-milestone` to define the next set of objectives.
+
 ### Phase 1: Foundation & Infrastructure
 **Status**: ✅ Complete
 **Objective**: Set up project structure, FastAPI backend, local ChromaDB setup, and basic document ingestion endpoint.
@@ -93,4 +98,3 @@
 
 **Verification**:
 - TBD
-
