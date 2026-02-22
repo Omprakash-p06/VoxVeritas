@@ -161,3 +161,44 @@ cython_debug/
 
 # Custom data
 .data/
+
+# VS Code / editor state
+.vscode/
+*.code-workspace
+
+# Frontend (Vite/Node)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/.eslintcache
+frontend/coverage/
+
+# Local tool/work folders
+.agent/
+.gemini/
+.gsd/
+
+# Local binaries and archives
+koboldcpp.exe
+*.exe
+*.dll
+*.zip
+*.7z
+
+# Runtime / generated outputs
+*.tmp
+*.temp
+*.bak
+*.out
+*.pid
+pytest_out.txt
+ocr_accuracy_results.txt
+
+# Evaluation generated files
+evaluations/results.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

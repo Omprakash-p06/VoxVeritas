@@ -47,10 +47,10 @@ async def check_health() -> HealthResponse:
         _stt_instance = getattr(STTService, "_instance", None)
         _tts_instance = getattr(TTSService, "_instance", None)
 
-        llm_loaded = _llm_instance is not None and getattr(_llm_instance, "llm", None) is not None
-        llm_info = _llm_instance.get_current_model_info() if llm_loaded else {}
+        llm_loaded = _llm_instance is not None and bool(getattr(_llm_instance, "connected", False))
+        llm_info = _llm_instance.get_current_model_info() if _llm_instance is not None else {}
         active_llm_name = llm_info.get('name', 'None') if llm_loaded else "None"
-        active_llm_backend = llm_info.get('compute_backend', 'cpu') if llm_loaded else "cpu"
+        active_llm_backend = llm_info.get('compute_backend', 'koboldcpp') if llm_loaded else "koboldcpp"
 
         models = ModelsStatus(
             llm=active_llm_name,
@@ -67,7 +67,7 @@ async def check_health() -> HealthResponse:
         logger.warning(f"Models health check failed: {e}")
         models = ModelsStatus(
             llm="bartowski/sarvam-1-GGUF", llm_loaded=False,
-            llm_backend="cpu",
+            llm_backend="koboldcpp",
             stt="openai/whisper-base", stt_loaded=False,
             tts="kokoro-tts", tts_loaded=False,
             embedder="all-MiniLM-L6-v2", embedder_loaded=False,

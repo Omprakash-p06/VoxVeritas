@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from src.core.logging import setup_logging
-from src.api import health, document, qa, voice, safety
+from src.api import health, document, qa, voice, safety, screen
 
 def create_app() -> FastAPI:
     """Creates and configures the FastAPI application."""
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
     app.include_router(qa.router, tags=["QA"])
     app.include_router(voice.router, tags=["Voice"])
     app.include_router(safety.router, tags=["Safety"])
+    app.include_router(screen.router, tags=["ScreenOCR"])
 
     @app.on_event("startup")
     async def startup_event():

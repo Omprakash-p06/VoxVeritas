@@ -104,6 +104,7 @@ export interface ChatRequest {
 export interface ChatDirectResponse {
   response: string;
   model: string;
+  citations: string[];
 }
 
 // Voice RAG (/ask_voice)

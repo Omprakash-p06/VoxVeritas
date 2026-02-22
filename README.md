@@ -32,3 +32,17 @@ run.bat
    ```bash
    uvicorn src.main:app --host 0.0.0.0 --port 8000
    ```
+
+## LLM Backend (KoboldCpp)
+
+VoxVeritas now uses KoboldCpp as the LLM runtime (instead of `llama-cpp-python` inside FastAPI).
+
+1. Start KoboldCpp separately with your GGUF model and GPU-enabled flags.
+2. Ensure the KoboldCpp API is reachable (default):
+   - `http://127.0.0.1:5001/api/v1/generate`
+3. Optional environment variables before running FastAPI:
+   - `KOBOLDCPP_BASE_URL` (default: `http://127.0.0.1:5001`)
+   - `KOBOLDCPP_TIMEOUT_SECONDS` (default: `240`)
+   - `KOBOLDCPP_CONTEXT_LENGTH` (default: `4096`)
+   - `KOBOLDCPP_RAG_MODEL_NAME` (display label only)
+   - `KOBOLDCPP_CHAT_MODEL_NAME` (display label only)

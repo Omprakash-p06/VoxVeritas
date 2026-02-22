@@ -1,11 +1,14 @@
 import os
 import sys
 import asyncio
+import threading
 from loguru import logger
 from PIL import ImageGrab
 
 # Conditional imports based on OS platform
 PLATFORM = sys.platform
+HAS_WINSDK = False
+HAS_TESSERACT = False
 
 if PLATFORM == "win32":
     # WinRT dependencies for zero-VRAM Windows OCR
@@ -14,12 +17,19 @@ if PLATFORM == "win32":
         import winsdk.windows.graphics.imaging as imaging
         import winsdk.windows.storage as storage
         import winsdk.windows.storage.streams as streams
+        HAS_WINSDK = True
     except ImportError:
         logger.warning("Failed to load winsdk on win32. Windows native OCR will be unavailable.")
+    try:
+        import pytesseract
+        HAS_TESSERACT = True
+    except ImportError:
+        logger.warning("Failed to load pytesseract on win32. OCR fallback will be unavailable.")
 elif PLATFORM.startswith("linux"):
     # Tesseract dependency for zero-VRAM Linux OCR
     try:
         import pytesseract
+        HAS_TESSERACT = True
     except ImportError:
         logger.warning("Failed to load pytesseract on Linux. Linux OCR will be unavailable.")
 
@@ -37,26 +47,37 @@ class ScreenReaderService:
 
     def _init_service(self):
         self.engine = None
+        self.engine_name = "none"
         self.is_linux = PLATFORM.startswith("linux")
         self.is_windows = PLATFORM == "win32"
         
         if self.is_windows:
-            logger.info("Initializing Windows Native OCR Engine (winsdk)...")
-            try:
-                self.engine = ocr.OcrEngine.try_create_from_user_profile_languages()
-                if self.engine:
-                    logger.info("Windows OCR Engine connected successfully")
-                else:
-                    logger.error("Failed to initialize Windows OCR Engine. Ensure Windows language packs are installed.")
-            except Exception as e:
-                logger.error(f"WinRT initialization error: {e}")
+            if HAS_WINSDK:
+                logger.info("Initializing Windows Native OCR Engine (winsdk)...")
+                try:
+                    self.engine = ocr.OcrEngine.try_create_from_user_profile_languages()
+                    if self.engine:
+                        self.engine_name = "winsdk"
+                        logger.info("Windows OCR Engine connected successfully")
+                    else:
+                        logger.error("Failed to initialize Windows OCR Engine. Ensure Windows language packs are installed.")
+                except Exception as e:
+                    logger.error(f"WinRT initialization error: {e}")
+
+            if not self.engine and HAS_TESSERACT:
+                self.engine = "tesseract"
+                self.engine_name = "tesseract"
+                logger.warning("Falling back to Tesseract OCR on Windows.")
                 
         elif self.is_linux:
             logger.info("Initializing Linux Tesseract OCR Fallback...")
-            # We don't need a formal "engine" object for pytesseract, 
-            # but we set flag to true so we know it's available.
-            # You must have tesseract installed on the system (e.g. pacman -S tesseract)
-            self.engine = "tesseract"
+            if HAS_TESSERACT:
+                # We don't need a formal "engine" object for pytesseract,
+                # but we set flag to true so we know it's available.
+                self.engine = "tesseract"
+                self.engine_name = "tesseract"
+            else:
+                logger.error("Tesseract OCR not available on Linux.")
         else:
             logger.error(f"Unsupported OS platform for Screen OCR: {PLATFORM}")
 
@@ -95,6 +116,34 @@ class ScreenReaderService:
             logger.error(f"Error during Linux Tesseract OCR extraction: {str(e)}. Ensure 'tesseract' is installed natively (e.g. pacman -S tesseract).")
             return ""
 
+    def _extract_text_tesseract(self, file_path: str) -> str:
+        """Runs Tesseract OCR on any platform where pytesseract is available."""
+        try:
+            import pytesseract
+            text = pytesseract.image_to_string(file_path)
+            return text.strip()
+        except Exception as e:
+            logger.error(f"Error during Tesseract OCR extraction: {str(e)}")
+            return ""
+
+    def _extract_text_windows_sync(self, file_path: str) -> str:
+        """Runs WinSDK async OCR in a separate thread to avoid nested event-loop errors."""
+        result = {"text": ""}
+
+        def _runner():
+            try:
+                result["text"] = asyncio.run(self._extract_text_windows_async(file_path))
+            except Exception as e:
+                logger.error(f"Windows OCR thread failed: {e}")
+
+        worker = threading.Thread(target=_runner, daemon=True)
+        worker.start()
+        worker.join(timeout=20)
+        return (result.get("text") or "").strip()
+
+    def get_engine_name(self) -> str:
+        return self.engine_name
+
     def capture_and_read_screen(self) -> str:
         """
         Synchronous wrapper: Grabs the current screen using Pillow, saves a temporary PNG, 
@@ -111,19 +160,18 @@ class ScreenReaderService:
             
             # On Wayland (modern Linux), ImageGrab might fail unless gnome-screenshot or grim is installed
             # but Pillow 9.3+ supports wayland via wl-paste/grim natively if available.
-            screenshot = ImageGrab.grab()
+            if self.is_windows:
+                screenshot = ImageGrab.grab(all_screens=True)
+            else:
+                screenshot = ImageGrab.grab()
             screenshot.save(temp_path, format="PNG")
             
             logger.debug(f"Image saved to {temp_path}, running OCR...")
             
-            if self.is_windows:
-                loop = asyncio.new_event_loop()
-                try:
-                    text = loop.run_until_complete(self._extract_text_windows_async(temp_path))
-                finally:
-                    loop.close()
-            elif self.is_linux:
-                text = self._extract_text_linux(temp_path)
+            if self.is_windows and self.engine_name == "winsdk":
+                text = self._extract_text_windows_sync(temp_path)
+            elif self.engine_name == "tesseract":
+                text = self._extract_text_tesseract(temp_path)
             else:
                 text = ""
             

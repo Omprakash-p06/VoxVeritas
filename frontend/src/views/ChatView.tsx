@@ -22,7 +22,7 @@ export function ChatView() {
 
   // Mode toggles
   const [useRAG, setUseRAG] = useState(true);           // RAG vs Direct LLM
-  const [readScreen, setReadScreen] = useState(false);   // Screen reader for voice
+  const [readScreen, setReadScreen] = useState(false);   // Screen OCR for text + voice
   const [ttsEnabled, setTtsEnabled] = useState(false);   // Auto-TTS on responses
 
   const { state: recordingState, startRecording, stopRecording } = useAudioRecorder();
@@ -116,7 +116,7 @@ export function ChatView() {
           timestamp: new Date(),
         };
         addMessage(systemMessage);
-        setCitations([]);
+        setCitations(response.citations ?? []);
         setActiveModel(response.model || 'UNKNOWN');
 
         if (ttsEnabled) {
@@ -240,7 +240,7 @@ export function ChatView() {
           {/* Screen Reader Toggle */}
           <button
             onClick={() => setReadScreen(!readScreen)}
-            title="Toggle screen reader (OCR) context for voice queries"
+            title="Toggle screen OCR context for both text and voice queries"
             className={`px-2 py-1 pixel-text-sm border-2 transition-colors ${readScreen
               ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
               : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]'
@@ -352,7 +352,7 @@ export function ChatView() {
                   NO CITATIONS
                 </p>
                 <p className="pixel-text-sm text-[var(--color-text-disabled)] mt-1">
-                  {useRAG ? 'ASK A QUESTION TO SEE SOURCES' : 'SWITCH TO RAG MODE FOR CITATIONS'}
+                  {useRAG ? 'ASK A QUESTION TO SEE SOURCES (INCLUDING SCREEN_OCR)' : 'ASK A QUESTION TO SEE CONTEXT REFERENCES'}
                 </p>
               </div>
             ) : (

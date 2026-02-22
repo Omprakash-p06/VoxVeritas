@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from src.services.llm_service import LLMService, get_llm_service
 from src.services.rag_service import RAGService, get_rag_service, RAGResponse
 from loguru import logger
+from typing import List
 
 class ChatRequest(BaseModel):
     prompt: str
@@ -13,6 +13,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     model: str
+    citations: List[str]
 
 class QARequest(BaseModel):
     query: str
@@ -22,31 +23,17 @@ class QARequest(BaseModel):
 router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse, summary="Direct chat with the LLM")
-async def chat(request: ChatRequest, service: LLMService = Depends(get_llm_service)) -> ChatResponse:
+async def chat(request: ChatRequest, service: RAGService = Depends(get_rag_service)) -> ChatResponse:
     """
-    Directly queries the LLM with a prompt. 
-    This is primarily for testing the base model integration.
+    Direct chat mode using the chat model, while still attaching retrieved document citations.
     """
     try:
-        prompt = request.prompt
-        if request.read_screen:
-            from src.services.screen_reader import get_screen_reader_service
-            ocr_text = get_screen_reader_service().capture_and_read_screen()
-            if ocr_text:
-                prompt = f"SCREEN CONTEXT: {ocr_text}\n\nUSER PROMPT: {prompt}"
-
-        response_text = service.generate_response(
-            prompt=(
-                "You are VoxVeritas. Provide factual, concise answers. "
-                "If you are uncertain, clearly say so.\n\n"
-                f"User: {prompt}\nAssistant:"
-            ),
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-            mode="chat"
+        rag_result = service.ask_question(
+            query=request.prompt,
+            mode="chat",
+            read_screen=request.read_screen,
         )
-        model_name = service.get_current_model_info().get("name", "Unknown")
-        return ChatResponse(response=response_text, model=model_name)
+        return ChatResponse(response=rag_result.answer, model=rag_result.model, citations=rag_result.citations)
     except Exception as e:
         logger.error(f"Chat endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
