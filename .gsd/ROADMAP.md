@@ -71,7 +71,7 @@
 ---
 
 ### Phase 9: UX Refinement & Normal Chatbot Integration
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Enhance the UI/UX for the target audience by adding a normal chatbot mode (switching between RAG and standard LLM), displaying the running model in the UI, fixing document deletion, and adding a script to manage/download models easily. Ensures GPU VRAM is used efficiently for these tasks.
 **Depends on**: Phase 8
 
