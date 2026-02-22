@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const transcriptionText = document.getElementById('transcription-text');
     const answerText = document.getElementById('answer-text');
     const playbackAudio = document.getElementById('playback-audio');
+    const activeModelName = document.getElementById('active-model-name');
+    const chatModeToggle = document.getElementById('chat-mode-toggle');
+    const documentList = document.getElementById('document-list');
 
     let mediaRecorder;
     let audioChunks = [];
@@ -78,9 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', audioBlob, 'query.wav');
 
-        // Check toggle
+        // Check toggles
         if (readScreenToggle.checked) {
             formData.append('read_screen', 'true');
+        }
+        if (chatModeToggle.checked) {
+            formData.append('chat_mode', 'true');
         }
 
         try {
@@ -128,6 +134,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function fetchHealth() {
+        try {
+            const res = await fetch('/health');
+            const data = await res.json();
+            if (activeModelName && data.models && data.models.llm) {
+                activeModelName.textContent = data.models.llm;
+            }
+        } catch (e) {
+            console.error("Failed to fetch health info", e);
+            if (activeModelName) activeModelName.textContent = "Offline";
+        }
+    }
+
+    async function fetchDocuments() {
+        if (!documentList) return;
+        try {
+            const res = await fetch('/documents');
+            const data = await res.json();
+
+            if (data.documents.length === 0) {
+                documentList.innerHTML = '<p class="placeholder">No documents uploaded.</p>';
+                return;
+            }
+
+            documentList.innerHTML = '';
+            data.documents.forEach(doc => {
+                const docEl = document.createElement('div');
+                docEl.className = 'doc-item';
+                docEl.innerHTML = `
+                    <span class="doc-name">📄 ${doc.filename}</span>
+                    <button class="delete-btn" data-id="${doc.doc_id}">Trash</button>
+                `;
+                documentList.appendChild(docEl);
+            });
+
+            // Attach delete listeners
+            documentList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    if (confirm('Are you sure you want to delete this document?')) {
+                        await deleteDocument(id);
+                    }
+                });
+            });
+        } catch (e) {
+            console.error("Failed to fetch documents", e);
+            documentList.innerHTML = '<p class="placeholder" style="color:red">Error loading documents.</p>';
+        }
+    }
+
+    async function deleteDocument(doc_id) {
+        try {
+            const res = await fetch(`/document/${doc_id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchDocuments(); // refresh list
+            } else {
+                alert("Failed to delete document.");
+            }
+        } catch (e) {
+            console.error("Delete err:", e);
+        }
+    }
+
     // Initialize on load
     setupAudio();
+    fetchHealth();
+    fetchDocuments();
+
+    // Refresh health after queries as the model might swap
+    chatModeToggle.addEventListener('change', fetchHealth);
 });

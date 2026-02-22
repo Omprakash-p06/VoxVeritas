@@ -82,9 +82,20 @@ header p {
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255, 65, 108, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 65, 108, 0); }
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7);
+    }
+
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 20px rgba(255, 65, 108, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 65, 108, 0);
+    }
 }
 
 /* Toggle Switch */
@@ -110,7 +121,10 @@ header p {
 .slider {
     position: absolute;
     cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-color: rgba(255, 255, 255, 0.2);
     transition: .4s;
     border-radius: 34px;
@@ -128,11 +142,11 @@ header p {
     border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background-color: #764ba2;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(26px);
 }
 
@@ -185,4 +199,67 @@ input:checked + .slider:before {
 .card.highlight {
     background: rgba(118, 75, 162, 0.15);
     border: 1px solid rgba(118, 75, 162, 0.3);
+}
+
+/* Model Status Top Bar */
+.top-bar {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-bottom: -1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top-bar strong {
+    color: #10b981;
+}
+
+/* Document List */
+.documents-section .card {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.doc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.doc-name {
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80%;
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.4);
+    color: white;
 }
