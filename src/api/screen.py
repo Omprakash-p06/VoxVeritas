@@ -72,3 +72,8 @@ async def screen_ocr_upload(file: UploadFile = File(...)) -> ScreenOCRResponse:
                 os.remove(temp_path)
             except Exception:
                 pass
+
+
+@router.post("/screen/ocr", response_model=ScreenOCRResponse, summary="(Legacy) Run OCR on an uploaded screenshot")
+async def screen_ocr_upload_legacy(file: UploadFile = File(...)) -> ScreenOCRResponse:
+    return await screen_ocr_upload(file)
