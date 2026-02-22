@@ -8,7 +8,7 @@
 - Re-tested `test_voice_api.py`, verified StaticFiles routing, and successfully passed a live `npx promptfoo eval` (10/10) against the FastAPI RAG fallback guards.
 
 ## Next Step
-- `/plan 8` to create detailed execution plans for the Frontend-Backend Integration phase.
+- `/plan 8` and `/plan 9` to create detailed execution plans for Frontend-Backend Integration and UX Refinement.
 
 
 ## Recent Changes
