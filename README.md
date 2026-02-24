@@ -10,10 +10,15 @@ VoxVeritas is a voice-first, multilingual, accessibility-focused RAG assistant w
 
 ## Prerequisites
 
-- Python 3.10+
+- **Python 3.11 or 3.12, 64-bit** (required — Python 3.13 and 32-bit builds lack prebuilt wheels for `pydantic-core`, `numpy`, `chromadb`)
 - Node.js 18+
 - npm
 - (Windows) `koboldcpp.exe` in project root
+
+> **Tip:** Verify you have the right Python before creating a venv:
+> ```powershell
+> py -0   # lists installed versions; look for -V:3.11 or -V:3.12 (64-bit)
+> ```
 
 ## One-command launch (Windows)
 
@@ -81,25 +86,27 @@ Options:
 
 ### 1) Install dependencies
 
-```bash
-python -m venv venv
-```
+Windows (use `py -3.11` to pin the correct interpreter):
 
-Windows:
-
-```bat
-venv\Scripts\activate.bat
-pip install -r requirements.txt
-cd frontend && npm install && cd ..
+```powershell
+py -3.11 -m venv venv --without-pip
+venv\Scripts\python.exe -m ensurepip
+venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+venv\Scripts\pip.exe install -r requirements.txt
+cd frontend; npm install; cd ..
 ```
 
 Linux/macOS:
 
 ```bash
+python3.11 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 cd frontend && npm install && cd ..
 ```
+
+> **Note:** `run.bat` calls plain `python -m venv venv` which may pick up an incompatible Python on PATH. If it fails, run the manual steps above instead.
 
 ### 2) Download models
 
@@ -141,6 +148,33 @@ npm run dev
 ## Health checks
 
 ```powershell
-python -c "import requests; print(requests.get('http://127.0.0.1:5001/api/extra/version',timeout=10).status_code)"
-python -c "import requests; print(requests.get('http://localhost:8000/health',timeout=10).json())"
+venv\Scripts\python.exe -c "import requests; print(requests.get('http://127.0.0.1:5001/api/extra/version',timeout=10).status_code)"
+venv\Scripts\python.exe -c "import requests; print(requests.get('http://localhost:8000/health',timeout=10).json())"
+```
+
+## Troubleshooting
+
+### `ModuleNotFoundError: No module named 'pydantic_core._pydantic_core'`
+
+This means your venv was created with an incompatible Python (typically Python 3.13 or a 32-bit build). Fix:
+
+```powershell
+Remove-Item -Recurse -Force venv
+py -3.11 -m venv venv --without-pip
+venv\Scripts\python.exe -m ensurepip
+venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+venv\Scripts\pip.exe install -r requirements.txt
+```
+
+### `numpy` / `chromadb` fails to build from source
+
+Same root cause — wrong Python version or 32-bit interpreter. Prebuilt wheels for these packages only exist for Python 3.11/3.12 64-bit on Windows. Use `py -3.11` as shown above.
+
+### `pip` bootstrap fails during `py -3.11 -m venv venv`
+
+Network-restricted environments may fail to fetch pip during venv creation. Use `--without-pip` and bootstrap with `ensurepip` (offline/bundled):
+
+```powershell
+py -3.11 -m venv venv --without-pip
+venv\Scripts\python.exe -m ensurepip
 ```
